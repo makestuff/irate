@@ -91,8 +91,7 @@ void EVENT_USB_Device_ConfigurationChanged(void) {
 void EVENT_USB_Device_ControlRequest(void) {
   switch (USB_ControlRequest.bRequest) {
   case HID_REQ_GetReport:
-    if (USB_ControlRequest.bmRequestType == (REQDIR_DEVICETOHOST | REQTYPE_CLASS | REQREC_INTERFACE))
-    {
+    if (USB_ControlRequest.bmRequestType == (REQDIR_DEVICETOHOST | REQTYPE_CLASS | REQREC_INTERFACE)) {
       USB_KeyboardReport_Data_t kbReportData;
       createKeyboardReport(&kbReportData);
       Endpoint_ClearSETUP();
@@ -102,8 +101,7 @@ void EVENT_USB_Device_ControlRequest(void) {
     break;
     
   case HID_REQ_SetReport:
-    if (USB_ControlRequest.bmRequestType == (REQDIR_HOSTTODEVICE | REQTYPE_CLASS | REQREC_INTERFACE))
-    {
+    if (USB_ControlRequest.bmRequestType == (REQDIR_HOSTTODEVICE | REQTYPE_CLASS | REQREC_INTERFACE)) {
       Endpoint_ClearSETUP();
       while (!Endpoint_IsOUTReceived()) {
         if (USB_DeviceState == DEVICE_STATE_Unattached) {
