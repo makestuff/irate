@@ -15,102 +15,124 @@ static volatile uint8_t bitNum;
 static volatile uint16_t accumulator;
 static volatile uint16_t value = 0x0000;
 
-static inline void resetTimer(void) {
+// Timer controls, to start, reset and stop the 2MHz timer
+static inline void timerReset(void) {
   TCNT1 = 0;
 }
-static inline void startTimer(void) {
-  resetTimer();
+static inline void timerStart(void) {
+  timerReset();
   TCCR1B = _BV(WGM12) | _BV(CS11);  // CTC mode, prescaler 8 (2 MHz)
 }
-static inline void stopTimer(void) {
+static inline void timerStop(void) {
   TCCR1B = 0x00;
 }
+
+// Pin status for the (active-low) detector signal
 static bool pinAsserted(void) {
   return (PINC & _BV(7)) == 0;
 }
 static bool pinDeasserted(void) {
   return (PINC & _BV(7)) != 0;
 }
+
+// Blue LED controls (LEDs are wired active-low)
 static void ledOn(void) {
   PORTD &= ~_BV(5);
 }
 static void ledOff(void) {
   PORTD |= _BV(5);
 }
-static void error(void) {
+
+// This is called for more serious problems that *should* never happen. It
+// lights the red LED, and it stays lit.
+static void fsmError(void) {
   PORTD &= ~_BV(6);
   state = S_AWAIT_START_MARK;
 }
 
+// Pin interrupt fires on every rising and falling edge of PC7 (INT4).
 ISR(INT4_vect) {
   switch (state) {
-  case S_AWAIT_START_MARK:
-    if (pinAsserted()) {
-      startTimer();
-      state = S_AWAIT_START_SPACE;
-    }
-    break;
+    // Called at the beginning of a start mark
+    case S_AWAIT_START_MARK:
+      if (pinAsserted()) {
+        timerStart();
+        state = S_AWAIT_START_SPACE;
+      }
+      break;
 
-  case S_AWAIT_START_SPACE:
-    if (pinDeasserted()) {
-      if (TCNT1 > 2*1800) {
-        // More than 1800us, therefore it was a start mark ("0" marks are 600us,
-        // "1" marks are 1200us, "start" marks are 2400us)
-        ledOn();
-        bitNum = accumulator = 0;
-        state = S_AWAIT_BIT_MARK;
+    // Called at the end of the start mark. We can figure out the mark's
+    // duration to see whether it really is a start mark.
+    case S_AWAIT_START_SPACE:
+      if (pinDeasserted()) {
+        if (TCNT1 > 2*1800) {
+          // More than 1800us, therefore it was a start mark ("0" marks are 600us,
+          // "1" marks are 1200us, "start" marks are 2400us)
+          timerReset();
+          ledOn();
+          bitNum = accumulator = 0;
+          state = S_AWAIT_BIT_MARK;
+        } else {
+          // It was not a start mark. That's OK, we were probably just unlucky
+          // and started in the middle of a burst. Keep trying, eventually it'll
+          // work.
+          state = S_AWAIT_START_MARK;
+        }
       } else {
-        // It was not a start mark
-        state = S_AWAIT_START_MARK;
+        fsmError();
       }
-    } else {
-      error();
-    }
-    resetTimer();
-    break;
+      timerReset();
+      break;
 
-  case S_AWAIT_BIT_MARK:
-    if (pinAsserted()) {
-      state = S_AWAIT_BIT_SPACE;
-    } else {
-      error();
-    }
-    resetTimer();
-    break;
-
-  case S_AWAIT_BIT_SPACE:
-    if (pinDeasserted()) {
-      state = S_AWAIT_BIT_MARK;
-      ++bitNum;
-      accumulator <<= 1;  // assume it was a "0" mark
-      if (TCNT1 > 2*900) {
-        ++accumulator;    // nope, it was a "1" mark
-      }
-      if (bitNum == 15) {
-        value = accumulator;
-        state = S_AWAIT_START_MARK;  // got all 15 bits
+    // Called at the beginning of a bit mark. The remote control sends 15 bits.
+    case S_AWAIT_BIT_MARK:
+      if (pinAsserted()) {
+        state = S_AWAIT_BIT_SPACE;
       } else {
-        state = S_AWAIT_BIT_MARK;
+        fsmError();
       }
-    } else {
-      error();
-    }
-    resetTimer();
-    break;
+      timerReset();
+      break;
+
+    // Called at the end of a bit mark. We can figure out the mark's duration to
+    // see whether it was a "0" mark or a "1" mark.
+    case S_AWAIT_BIT_SPACE:
+      if (pinDeasserted()) {
+        state = S_AWAIT_BIT_MARK;
+        ++bitNum;
+        accumulator <<= 1;  // assume it was a "0" mark
+        if (TCNT1 > 2*900) {
+          ++accumulator;    // nope, it was a "1" mark
+        }
+        if (bitNum == 15) {
+          value = accumulator;
+          state = S_AWAIT_START_MARK;  // got all 15 bits
+        } else {
+          state = S_AWAIT_BIT_MARK;
+        }
+      } else {
+        fsmError();
+      }
+      timerReset();
+      break;
   }
 }
 
+// Timer interrupt fires 26ms from the last edge. This should happen only when
+// a button is released.
 ISR(TIMER1_COMPA_vect) {
   ledOff();
   value = 0;
-  stopTimer();
+  timerStop();
   state = S_AWAIT_START_MARK;
 }
 
+// Allow the USB stuff to get access to the current button-code.
 uint16_t getValue(void) {
   return value;
 }
 
+// Initialise pin, timer and LEDs
 void irInit(void) {
   // LEDs
   DDRD |= _BV(5) | _BV(6);
@@ -124,5 +146,5 @@ void irInit(void) {
   OCR1A = 51999;  // 26ms
   TIMSK1 = _BV(OCIE1A);
   TCCR1A = 0x00;
-  stopTimer();
+  timerStop();
 }
