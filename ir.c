@@ -55,7 +55,7 @@ static inline void fsmReset(void) {
 // This is called for more serious problems that *should* never happen. It
 // lights the red LED, and it stays lit.
 static inline void fsmError(void) {
-  PORTD &= ~_BV(6);
+  PORTD &= ~_BV(6);  // LEDs are active-low
   fsmReset();
 }
 
@@ -75,8 +75,8 @@ ISR(INT4_vect) {
     case S_AWAIT_START_SPACE:
       if (pinDeasserted()) {
         if (TCNT1 > 2*1800) {
-          // More than 1800us, therefore it was a start mark ("0" marks are 600us,
-          // "1" marks are 1200us, "start" marks are 2400us)
+          // More than 1800us, therefore it was a start mark ("0" marks are
+          // 600us, "1" marks are 1200us, "start" marks are 2400us)
           timerReset();
           ledOn();
           bitNum = accumulator = 0;
@@ -88,7 +88,7 @@ ISR(INT4_vect) {
           fsmReset();
         }
       } else {
-        fsmError();
+        fsmError();  // not expecting it to be asserted - noise perhaps?
       }
       break;
 
@@ -98,7 +98,7 @@ ISR(INT4_vect) {
         timerReset();
         state = S_AWAIT_BIT_SPACE;
       } else {
-        fsmError();
+        fsmError();  // not expecting it to be deasserted - noise perhaps?
       }
       break;
 
@@ -115,7 +115,7 @@ ISR(INT4_vect) {
             ++accumulator;    // nope, it was a "1" mark
           }
           if (bitNum == 15) {
-            value = accumulator;
+            value = accumulator;  // "publish" value so USB side has access to it
             state = S_AWAIT_START_MARK;  // got all 15 bits
           } else {
             state = S_AWAIT_BIT_MARK;
@@ -124,7 +124,7 @@ ISR(INT4_vect) {
           fsmError();  // a start mark in the middle of a bunch of data bits
         }
       } else {
-        fsmError();
+        fsmError();  // not expecting it to be asserted - noise perhaps?
       }
       break;
   }
