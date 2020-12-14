@@ -28,24 +28,24 @@ static inline void timerStop(void) {
 }
 
 // Pin status for the (active-low) detector signal
-static bool pinAsserted(void) {
+static inline bool pinAsserted(void) {
   return (PINC & _BV(7)) == 0;
 }
-static bool pinDeasserted(void) {
+static inline bool pinDeasserted(void) {
   return (PINC & _BV(7)) != 0;
 }
 
 // Blue LED controls (LEDs are wired active-low)
-static void ledOn(void) {
+static inline void ledOn(void) {
   PORTD &= ~_BV(5);
 }
-static void ledOff(void) {
+static inline void ledOff(void) {
   PORTD |= _BV(5);
 }
 
 // This is called for more serious problems that *should* never happen. It
 // lights the red LED, and it stays lit.
-static void fsmError(void) {
+static inline void fsmError(void) {
   PORTD &= ~_BV(6);
   state = S_AWAIT_START_MARK;
 }
