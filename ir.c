@@ -85,44 +85,47 @@ ISR(INT4_vect) {
           // It was not a start mark. That's OK, we were probably just unlucky
           // and started in the middle of a burst. Keep trying, eventually it'll
           // work.
-          state = S_AWAIT_START_MARK;
+          fsmReset();
         }
       } else {
         fsmError();
       }
-      timerReset();
       break;
 
     // Called at the beginning of a bit mark. The remote control sends 15 bits.
     case S_AWAIT_BIT_MARK:
       if (pinAsserted()) {
+        timerReset();
         state = S_AWAIT_BIT_SPACE;
       } else {
         fsmError();
       }
-      timerReset();
       break;
 
     // Called at the end of a bit mark. We can figure out the mark's duration to
     // see whether it was a "0" mark or a "1" mark.
     case S_AWAIT_BIT_SPACE:
       if (pinDeasserted()) {
-        state = S_AWAIT_BIT_MARK;
-        ++bitNum;
-        accumulator <<= 1;  // assume it was a "0" mark
-        if (TCNT1 > 2*900) {
-          ++accumulator;    // nope, it was a "1" mark
-        }
-        if (bitNum == 15) {
-          value = accumulator;
-          state = S_AWAIT_START_MARK;  // got all 15 bits
+        const uint16_t t = TCNT1;
+        if (t < 2*1800) {
+          timerReset();
+          ++bitNum;
+          accumulator <<= 1;  // assume it was a "0" mark
+          if (t > 2*900) {
+            ++accumulator;    // nope, it was a "1" mark
+          }
+          if (bitNum == 15) {
+            value = accumulator;
+            state = S_AWAIT_START_MARK;  // got all 15 bits
+          } else {
+            state = S_AWAIT_BIT_MARK;
+          }
         } else {
-          state = S_AWAIT_BIT_MARK;
+          fsmError();  // a start mark in the middle of a bunch of data bits
         }
       } else {
         fsmError();
       }
-      timerReset();
       break;
   }
 }
