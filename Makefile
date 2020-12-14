@@ -1,5 +1,4 @@
 # The version of LUFA to download and use
-LUFA_VERSION = 170418
 MCU          = at90usb162
 ARCH         = AVR8
 BOARD        = BUMBLEB
@@ -8,7 +7,7 @@ F_USB        = $(F_CPU)
 OPTIMIZATION = s
 TARGET       = main
 SRC          = $(TARGET).c desc.c ir.c usb.c $(LUFA_SRC_USB)
-LUFA_PATH    = lufa-LUFA-$(LUFA_VERSION)/LUFA
+LUFA_PATH    = lufa/LUFA
 CC_FLAGS     = -Wall -Wextra -DUSE_LUFA_CONFIG_HEADER -Iconfig
 LD_FLAGS     =
 
