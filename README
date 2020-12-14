@@ -1,2 +1,3 @@
-Firmware for Minimus, to translate Sony RMT-CM15iP button-codes into standard
-VLC hotkeys. It uses a Vishay TSOP4138 with the OUT wired to PC7 on the Minimus.
+Firmware for Minimus, based on LUFA keyboard demo, to translate Sony RMT-CM15iP
+IR remote button-codes into standard VLC hotkeys. It uses a Vishay TSOP4138 with
+the OUT wired to PC7 on the Minimus.
