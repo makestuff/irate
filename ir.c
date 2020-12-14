@@ -43,11 +43,20 @@ static inline void ledOff(void) {
   PORTD |= _BV(5);
 }
 
+// This is called if things get out of sync. It'll try to re-sync at the next
+// mark.
+static inline void fsmReset(void) {
+  timerStop();
+  ledOff();
+  value = 0x0000;
+  state = S_AWAIT_START_MARK;
+}
+
 // This is called for more serious problems that *should* never happen. It
 // lights the red LED, and it stays lit.
 static inline void fsmError(void) {
   PORTD &= ~_BV(6);
-  state = S_AWAIT_START_MARK;
+  fsmReset();
 }
 
 // Pin interrupt fires on every rising and falling edge of PC7 (INT4).
@@ -121,10 +130,7 @@ ISR(INT4_vect) {
 // Timer interrupt fires 26ms from the last edge. This should happen only when
 // a button is released.
 ISR(TIMER1_COMPA_vect) {
-  ledOff();
-  value = 0;
-  timerStop();
-  state = S_AWAIT_START_MARK;
+  fsmReset();
 }
 
 // Allow the USB stuff to get access to the current button-code.
