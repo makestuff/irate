@@ -21,21 +21,6 @@ typedef enum {
   BC_VOLUME_DOWN    = 0x6422
 } ButtonCode;
 
-/*typedef enum {
-  BC_ON_OFF         = 0xA845,
-  BC_UP_ARROW       = 0x484D,
-  BC_MENU           = 0x884D,
-  BC_DOWN_ARROW     = 0xC84D,
-  BC_ENTER          = 0x084D,
-  BC_PLAY_PAUSE     = 0xCC4D,
-  BC_PREVIOUS_TRACK = 0x0C4D,
-  BC_NEXT_TRACK     = 0x8C4D,
-  BC_VOLUME_UP      = 0x4845,
-  BC_SOUND          = 0x0C45,
-  BC_VOLUME_DOWN    = 0xC845
-} ButtonCode;
-*/
-
 static void createKeyboardReport(USB_KeyboardReport_Data_t* const reportData) {
   const uint16_t value = getValue();  // get current button-code
   if (value == BC_PLAY_PAUSE) {
