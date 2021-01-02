@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-uint16_t getValue(void);
+uint16_t irGetState(void);
 void irInit(void);
 
 #endif

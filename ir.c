@@ -137,7 +137,7 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 // Allow the USB stuff to get access to the current button-code.
-uint16_t getValue(void) {
+uint16_t irGetState(void) {
   return value;
 }
 

@@ -7,6 +7,7 @@
 #include <avr/interrupt.h>
 #include <LUFA/Drivers/USB/USB.h>
 #include "ir.h"
+#include "mouse.h"
 #include "usb.h"
 
 int main(void) {
@@ -17,6 +18,7 @@ int main(void) {
   PORTB = 0xFF; PORTC = 0xFF; PORTD = 0xFF;  // ...with pull-ups
   USB_Init();
   irInit();
+  mouseInit();
   sei();
   for (;;) {
     usbSendReceive();
