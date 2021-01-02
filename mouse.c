@@ -39,7 +39,7 @@ void mouseInit(void) {
 
   // Configure timer 0
   TCNT0 = 0;
-  OCR0A = 249;  // 16ms
+  OCR0A = 249;  // 16ms (250*1024/16MHz = 0.016s)
   TIMSK0 = _BV(OCIE0A);
   TCCR0A = _BV(WGM01);
   TCCR0B = _BV(CS02) | _BV(CS00);  // CTC mode, prescaler 1024 (15.625 kHz)
